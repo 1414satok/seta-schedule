@@ -7,1076 +7,845 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>SETA 2026 Schedule</title>
 <style>
-  :root {
-    --primary: #1a3a6b;
-    --accent: #e8612c;
-    --keynote: #7b2d8b;
-    --plenary: #1a6b4a;
-    --bg: #f5f5f7;
-    --card: #ffffff;
-    --border: #d1d1d6;
-    --text: #1c1c1e;
-    --subtext: #6c6c70;
-    --room1: #1a3a6b;
-    --room2: #2e6da4;
-    --room3: #3a8a4a;
-    --room6: #8a5a00;
-    --room7: #8a1a2e;
-    --checked: #34c759;
-    --safe-bottom: env(safe-area-inset-bottom, 0px);
-  }
+:root {
+  --primary:#1a3a6b; --accent:#e8612c; --keynote:#7b2d8b; --plenary:#1a6b4a;
+  --bg:#f0f0f5; --card:#fff; --border:#d1d1d6; --text:#1c1c1e; --sub:#6c6c70;
+  --r1:#1a3a6b; --r2:#1a6b8a; --r3:#1a7a3a; --r6:#8a5a00; --r7:#8a1a2e;
+  --green:#34c759;
+  --st: env(safe-area-inset-top,0px);
+  --sb: env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;overflow:hidden;}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--text);
+  display:flex;flex-direction:column;height:100dvh;
+}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+/* Header */
+.app-hdr{
+  background:var(--primary);color:white;flex-shrink:0;
+  padding:calc(10px + var(--st)) 16px 8px;
+  box-shadow:0 1px 4px rgba(0,0,0,.3);
+}
+.app-hdr h1{font-size:19px;font-weight:700;letter-spacing:-.3px;}
+.app-hdr p{font-size:11px;opacity:.75;margin-top:2px;}
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    overflow-x: hidden;
-    min-height: 100vh;
-    min-height: -webkit-fill-available;
-  }
+/* Day tabs */
+.day-tabs{
+  display:flex;background:var(--primary);
+  padding:0 16px 10px;gap:8px;flex-shrink:0;
+}
+.day-tab{
+  flex:1;padding:9px 4px;border:none;border-radius:9px;
+  font-size:13px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.15);color:rgba(255,255,255,.7);
+  transition:all .2s;
+}
+.day-tab.active{background:#fff;color:var(--primary);}
 
-  /* ── Header ── */
-  .app-header {
-    background: var(--primary);
-    color: white;
-    padding: 12px 16px 8px;
-    padding-top: calc(12px + env(safe-area-inset-top, 0px));
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
-  }
-  .app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-  .app-header p { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+/* Schedule view */
+#scheduleView{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;}
 
-  /* ── Day Tabs ── */
-  .day-tabs {
-    display: flex;
-    background: var(--primary);
-    padding: 0 16px 8px;
-    gap: 8px;
-    position: sticky;
-    top: calc(60px + env(safe-area-inset-top, 0px));
-    z-index: 99;
-  }
-  .day-tab {
-    flex: 1;
-    padding: 8px 4px;
-    border: none;
-    border-radius: 8px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    background: rgba(255,255,255,0.15);
-    color: rgba(255,255,255,0.7);
-    transition: all 0.2s;
-  }
-  .day-tab.active {
-    background: white;
-    color: var(--primary);
-  }
+.bk-bar{
+  background:var(--card);border-bottom:1px solid var(--border);
+  padding:8px 16px;display:flex;align-items:center;gap:8px;
+  font-size:13px;color:var(--sub);flex-shrink:0;
+}
+.bk-bar strong{color:var(--text);}
+.clr-btn{
+  margin-left:auto;background:none;border:1px solid var(--border);
+  border-radius:6px;padding:4px 10px;font-size:12px;color:var(--sub);cursor:pointer;
+}
 
-  /* ── Bookmark bar ── */
-  .bookmark-bar {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 8px 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    color: var(--subtext);
-  }
-  .bookmark-bar strong { color: var(--text); }
-  .clear-btn {
-    margin-left: auto;
-    background: none;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 12px;
-    color: var(--subtext);
-    cursor: pointer;
-  }
+/* THE scroll container — both axes */
+.sched-scroll{
+  flex:1;overflow:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
 
-  /* ── Schedule Grid ── */
-  .schedule-wrapper {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: calc(20px + var(--safe-bottom));
-  }
+/* Grid */
+.sched-grid{
+  display:grid;
+  grid-template-columns:62px repeat(5,130px);
+  width:max-content;
+}
 
-  .schedule-grid {
-    display: grid;
-    min-width: 680px;
-    position: relative;
-  }
+/* Room header row — sticky top:0 WITHIN the scroll container */
+.rhdr{
+  position:sticky;top:0;
+  background:var(--card);z-index:50;
+  border-bottom:2px solid var(--border);
+  border-right:1px solid var(--border);
+  padding:10px 6px;text-align:center;
+  font-size:12px;font-weight:700;line-height:1.4;
+}
+.rhdr.corner{
+  left:0;z-index:60;background:var(--bg);
+  font-size:10px;color:var(--sub);
+  border-right:2px solid var(--border);
+}
+.rhdr.r1{color:var(--r1);border-top:3px solid var(--r1);}
+.rhdr.r2{color:var(--r2);border-top:3px solid var(--r2);}
+.rhdr.r3{color:var(--r3);border-top:3px solid var(--r3);}
+.rhdr.r6{color:var(--r6);border-top:3px solid var(--r6);}
+.rhdr.r7{color:var(--r7);border-top:3px solid var(--r7);}
 
-  /* Column setup: time + 5 rooms */
-  .schedule-grid {
-    grid-template-columns: 64px repeat(5, 1fr);
-  }
+/* Time label — sticky left:0 */
+.tlbl{
+  position:sticky;left:0;z-index:30;
+  background:var(--bg);
+  border-right:2px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:8px 4px;font-size:10px;font-weight:600;
+  color:var(--sub);text-align:center;
+  display:flex;align-items:flex-start;justify-content:center;
+  white-space:pre-line;min-height:76px;
+}
 
-  /* ── Room Header Row ── */
-  .room-header {
-    position: sticky;
-    top: calc(98px + env(safe-area-inset-top, 0px));
-    z-index: 50;
-    display: contents;
-  }
-  .room-header-cell {
-    background: var(--card);
-    border-bottom: 2px solid var(--border);
-    border-right: 1px solid var(--border);
-    padding: 8px 4px;
-    text-align: center;
-    font-size: 11px;
-    font-weight: 700;
-    line-height: 1.3;
-    position: sticky;
-    top: calc(98px + env(safe-area-inset-top, 0px));
-    z-index: 50;
-  }
-  .room-header-cell:first-child { background: var(--bg); }
-  .room-header-cell.r1 { color: var(--room1); border-top: 3px solid var(--room1); }
-  .room-header-cell.r2 { color: var(--room2); border-top: 3px solid var(--room2); }
-  .room-header-cell.r3 { color: var(--room3); border-top: 3px solid var(--room3); }
-  .room-header-cell.r6 { color: var(--room6); border-top: 3px solid var(--room6); }
-  .room-header-cell.r7 { color: var(--room7); border-top: 3px solid var(--room7); }
+/* Session cell */
+.scell{
+  border-right:1px solid var(--border);
+  border-bottom:1px solid var(--border);
+  padding:4px;
+}
+.span5{grid-column:2/7;}
 
-  /* ── Time Slot Row ── */
-  .time-label {
-    background: var(--bg);
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 8px 4px;
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--subtext);
-    text-align: center;
-    display: flex;
-    align-items: flex-start;
-    justify-content: center;
-    white-space: nowrap;
-  }
+/* Session card */
+.scard{
+  border-radius:9px;padding:8px 8px 10px;height:100%;
+  cursor:pointer;position:relative;
+  display:flex;flex-direction:column;gap:4px;
+  min-height:68px;-webkit-user-select:none;user-select:none;
+  transition:opacity .15s;
+}
+.scard:active{opacity:.7;}
+.scard.keynote {background:#f3e8f9;border-left:3px solid var(--keynote);}
+.scard.plenary {background:#e8f4ee;border-left:3px solid var(--plenary);}
+.scard.special  {background:#fff8e6;border-left:3px solid #c8960c;}
+.scard.p.r1{background:#eaeff9;border-left:3px solid var(--r1);}
+.scard.p.r2{background:#e5f2f7;border-left:3px solid var(--r2);}
+.scard.p.r3{background:#e5f5eb;border-left:3px solid var(--r3);}
+.scard.p.r6{background:#f7f1e3;border-left:3px solid var(--r6);}
+.scard.p.r7{background:#f7e8ec;border-left:3px solid var(--r7);}
 
-  /* ── Session Card ── */
-  .session-cell {
-    border-right: 1px solid var(--border);
-    border-bottom: 1px solid var(--border);
-    padding: 4px;
-    min-height: 80px;
-    position: relative;
-  }
+.sbadge{font-size:10px;font-weight:700;opacity:.6;text-transform:uppercase;}
+.stitle{font-size:12px;font-weight:700;line-height:1.4;flex:1;}
+.ssub  {font-size:11px;color:var(--sub);line-height:1.3;}
 
-  .session-card {
-    border-radius: 8px;
-    padding: 7px 8px;
-    height: 100%;
-    cursor: pointer;
-    position: relative;
-    transition: opacity 0.15s;
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-    min-height: 70px;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .session-card:active { opacity: 0.75; }
+/* Check count on card */
+.ck-cnt{
+  position:absolute;bottom:6px;right:6px;
+  background:var(--green);color:#fff;
+  border-radius:10px;font-size:10px;font-weight:700;
+  padding:2px 6px;line-height:1.4;
+}
+/* Keynote/plenary check btn on card */
+.ev-ck{
+  position:absolute;top:8px;right:8px;
+  width:26px;height:26px;border-radius:50%;
+  border:2px solid rgba(0,0,0,.2);background:rgba(255,255,255,.8);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:2;font-size:14px;
+  color:transparent;transition:all .2s;
+}
+.ev-ck.on{background:var(--green);border-color:var(--green);color:#fff;}
 
-  .session-card.keynote { background: #f3e8f9; border-left: 3px solid var(--keynote); }
-  .session-card.plenary { background: #e8f4ee; border-left: 3px solid var(--plenary); }
-  .session-card.parallel.r1 { background: #e8eef7; border-left: 3px solid var(--room1); }
-  .session-card.parallel.r2 { background: #e8f0f9; border-left: 3px solid var(--room2); }
-  .session-card.parallel.r3 { background: #eaf3eb; border-left: 3px solid var(--room3); }
-  .session-card.parallel.r6 { background: #f7f1e3; border-left: 3px solid var(--room6); }
-  .session-card.parallel.r7 { background: #f7e8ec; border-left: 3px solid var(--room7); }
-  .session-card.special { background: #fff8e6; border-left: 3px solid #d4a017; }
-  .session-card.empty { background: transparent; border: none; cursor: default; min-height: 0; }
+/* My schedule view */
+#myView{
+  display:none;flex:1;min-height:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:16px;background:var(--bg);
+}
+#myView.active{display:block;}
 
-  .session-type-badge {
-    font-size: 9px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    opacity: 0.7;
-  }
-  .session-title {
-    font-size: 11px;
-    font-weight: 600;
-    line-height: 1.4;
-    flex: 1;
-  }
-  .session-presenter {
-    font-size: 10px;
-    color: var(--subtext);
-    line-height: 1.3;
-  }
+.my-day-hdr{
+  font-size:11px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.5px;color:var(--sub);margin:16px 0 8px;
+}
+.my-day-hdr:first-child{margin-top:0;}
 
-  /* Checkbox overlay */
-  .check-btn {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    border: 2px solid rgba(0,0,0,0.2);
-    background: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    flex-shrink: 0;
-    z-index: 2;
-    transition: all 0.2s;
-    -webkit-user-select: none;
-    user-select: none;
-  }
-  .check-btn.checked {
-    background: var(--checked);
-    border-color: var(--checked);
-  }
-  .check-btn .checkmark {
-    color: white;
-    font-size: 12px;
-    line-height: 1;
-    display: none;
-  }
-  .check-btn.checked .checkmark { display: block; }
+.my-sess{
+  background:var(--card);border-radius:12px;
+  margin-bottom:10px;overflow:hidden;
+  box-shadow:0 1px 4px rgba(0,0,0,.07);
+}
+.my-sess-hdr{
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+}
+.my-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.my-info{flex:1;}
+.my-time{font-size:11px;color:var(--sub);}
+.my-sid {font-size:13px;font-weight:700;}
 
-  /* Span multiple columns (keynote/plenary/special) */
-  .col-span-5 { grid-column: 2 / 7; }
+.my-paper{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+}
+.my-paper:last-child{border-bottom:none;}
+.my-pck{
+  flex-shrink:0;width:24px;height:24px;border-radius:50%;
+  border:2px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;color:transparent;transition:all .2s;margin-top:1px;
+}
+.my-pck.on{background:var(--green);border-color:var(--green);color:#fff;}
+.my-pt{flex:1;}
+.my-ptitle{font-size:13px;font-weight:600;line-height:1.4;}
+.my-pauth {font-size:12px;color:var(--sub);margin-top:2px;}
 
-  /* ── Modal ── */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.5);
-    z-index: 200;
-    display: flex;
-    align-items: flex-end;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s;
-  }
-  .modal-overlay.open {
-    opacity: 1;
-    pointer-events: all;
-  }
-  .modal-sheet {
-    background: var(--card);
-    border-radius: 20px 20px 0 0;
-    width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    padding: 0 0 calc(24px + var(--safe-bottom));
-    transform: translateY(100%);
-    transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
-  }
-  .modal-overlay.open .modal-sheet {
-    transform: translateY(0);
-  }
-  .modal-handle {
-    width: 36px;
-    height: 5px;
-    background: var(--border);
-    border-radius: 3px;
-    margin: 12px auto 8px;
-  }
-  .modal-header {
-    padding: 4px 20px 16px;
-    border-bottom: 1px solid var(--border);
-  }
-  .modal-badge {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 4px;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-  .modal-badge.keynote { background: #f3e8f9; color: var(--keynote); }
-  .modal-badge.plenary { background: #e8f4ee; color: var(--plenary); }
-  .modal-badge.parallel { background: #e8eef7; color: var(--primary); }
-  .modal-title { font-size: 17px; font-weight: 700; line-height: 1.4; margin-bottom: 6px; }
-  .modal-meta { font-size: 13px; color: var(--subtext); }
-  .modal-meta span { margin-right: 12px; }
-  .modal-body { padding: 16px 20px; }
-  .modal-section-title {
-    font-size: 12px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--subtext);
-    margin-bottom: 10px;
-  }
-  .paper-item {
-    padding: 12px 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .paper-item:last-child { border-bottom: none; }
-  .paper-title { font-size: 14px; font-weight: 600; line-height: 1.4; margin-bottom: 4px; }
-  .paper-presenter { font-size: 13px; color: var(--subtext); }
-  .modal-footer {
-    padding: 12px 20px 0;
-  }
-  .modal-check-btn {
-    width: 100%;
-    padding: 14px;
-    border-radius: 12px;
-    border: none;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    background: var(--checked);
-    color: white;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-  }
-  .modal-check-btn.unchecked {
-    background: var(--primary);
-  }
+.empty{text-align:center;padding:60px 20px;color:var(--sub);}
+.empty .icon{font-size:48px;margin-bottom:12px;}
+.empty p{font-size:15px;line-height:1.6;}
 
-  /* ── My Schedule Panel ── */
-  .my-schedule-view {
-    display: none;
-    padding: 16px;
-  }
-  .my-schedule-view.active { display: block; }
-  .my-session-item {
-    background: var(--card);
-    border-radius: 12px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    border-left: 4px solid var(--primary);
-    cursor: pointer;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.07);
-  }
-  .my-session-time { font-size: 12px; color: var(--subtext); margin-bottom: 4px; }
-  .my-session-room { font-size: 11px; font-weight: 700; margin-bottom: 4px; }
-  .my-session-title { font-size: 14px; font-weight: 600; line-height: 1.4; }
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--subtext);
-  }
-  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
-  .empty-state p { font-size: 15px; }
+/* Bottom nav */
+.bot-nav{
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  display:flex;padding-bottom:var(--sb);flex-shrink:0;
+}
+.nbtn{
+  flex:1;padding:10px 4px 8px;border:none;background:transparent;
+  cursor:pointer;display:flex;flex-direction:column;
+  align-items:center;gap:3px;color:var(--sub);
+  font-size:10px;font-weight:500;position:relative;transition:color .2s;
+}
+.nbtn.active{color:var(--primary);}
+.nbtn svg{width:24px;height:24px;}
+.nbadge{
+  background:var(--accent);color:#fff;border-radius:10px;
+  font-size:9px;font-weight:700;padding:1px 5px;line-height:1.4;
+  position:absolute;top:5px;right:calc(50% - 22px);
+}
 
-  /* ── Bottom Nav ── */
-  .bottom-nav {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(255,255,255,0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border);
-    display: flex;
-    padding-bottom: var(--safe-bottom);
-    z-index: 90;
-  }
-  .nav-btn {
-    flex: 1;
-    padding: 10px 4px 8px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 3px;
-    color: var(--subtext);
-    font-size: 10px;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-  .nav-btn.active { color: var(--primary); }
-  .nav-btn svg { width: 24px; height: 24px; }
-  .nav-badge {
-    background: var(--accent);
-    color: white;
-    border-radius: 10px;
-    font-size: 9px;
-    font-weight: 700;
-    padding: 1px 5px;
-    position: absolute;
-    top: 6px;
-    right: calc(50% - 22px);
-  }
-  .nav-btn { position: relative; }
+/* Modal */
+.overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;
+  display:flex;align-items:flex-end;
+  opacity:0;pointer-events:none;transition:opacity .25s;
+}
+.overlay.open{opacity:1;pointer-events:all;}
+.sheet{
+  background:var(--card);border-radius:20px 20px 0 0;width:100%;
+  max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(.32,.72,0,1);
+  padding-bottom:calc(20px + var(--sb));
+}
+.overlay.open .sheet{transform:translateY(0);}
+.s-handle{width:36px;height:5px;background:var(--border);border-radius:3px;margin:12px auto 8px;}
+.s-head{padding:4px 20px 14px;border-bottom:1px solid var(--border);}
+.s-type{
+  display:inline-block;font-size:11px;font-weight:700;
+  padding:3px 8px;border-radius:4px;margin-bottom:8px;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.s-type.keynote{background:#f3e8f9;color:var(--keynote);}
+.s-type.plenary{background:#e8f4ee;color:var(--plenary);}
+.s-type.p      {background:#eaeff9;color:var(--primary);}
+.s-type.special{background:#fff8e6;color:#8a6000;}
+.s-title{font-size:18px;font-weight:700;line-height:1.4;margin-bottom:6px;}
+.s-meta{font-size:13px;color:var(--sub);}
+.s-body{padding:14px 20px;}
+.sec-hdr{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--sub);margin-bottom:10px;}
 
-  .main-content {
-    padding-bottom: calc(60px + var(--safe-bottom));
-  }
+/* Select-all button */
+.sel-all{
+  width:100%;padding:10px;background:transparent;
+  border:1.5px solid var(--border);border-radius:10px;
+  font-size:13px;font-weight:600;color:var(--primary);
+  cursor:pointer;margin-bottom:14px;transition:background .15s;
+}
+.sel-all:active{background:var(--bg);}
+
+/* Paper row in modal */
+.p-row{
+  display:flex;align-items:flex-start;gap:12px;
+  padding:12px 0;border-bottom:1px solid var(--border);
+  cursor:pointer;-webkit-user-select:none;user-select:none;
+}
+.p-row:last-child{border-bottom:none;}
+.p-ck{
+  flex-shrink:0;width:28px;height:28px;border-radius:50%;
+  border:2px solid var(--border);background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  font-size:15px;color:transparent;transition:all .2s;margin-top:1px;
+}
+.p-ck.on{background:var(--green);border-color:var(--green);color:#fff;}
+.p-info{flex:1;}
+.p-title{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:3px;}
+.p-auth {font-size:12px;color:var(--sub);}
+
+/* Special event check in modal */
+.ev-btn{
+  width:100%;padding:14px;border-radius:12px;border:none;
+  font-size:15px;font-weight:600;cursor:pointer;margin-top:16px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:all .2s;
+}
+.ev-btn.off{background:var(--primary);color:#fff;}
+.ev-btn.on {background:var(--green);color:#fff;}
 </style>
 </head>
 <body>
 
-<div class="app-header">
+<header class="app-hdr">
   <h1>SETA 2026</h1>
-  <p>Symposium on Econometric Theory and Applications — June 13–14, Tokyo</p>
-</div>
+  <p>Symposium on Econometric Theory and Applications — Jun 13–14, Tokyo</p>
+</header>
 
-<div class="day-tabs" id="dayTabs">
+<div class="day-tabs">
   <button class="day-tab active" onclick="switchDay(1)">Day 1 · Sat Jun 13</button>
   <button class="day-tab" onclick="switchDay(2)">Day 2 · Sun Jun 14</button>
 </div>
 
-<div class="main-content">
-  <!-- Schedule View -->
-  <div id="scheduleView">
-    <div class="bookmark-bar">
-      <span>チェック済み: <strong id="checkedCount">0</strong> セッション</span>
-      <button class="clear-btn" onclick="clearAll()">全解除</button>
-    </div>
-    <div class="schedule-wrapper">
-      <div class="schedule-grid" id="scheduleGrid"></div>
-    </div>
+<div id="scheduleView">
+  <div class="bk-bar">
+    <span>チェック: <strong id="ckCount">0</strong> 件</span>
+    <button class="clr-btn" onclick="clearAll()">全解除</button>
   </div>
-
-  <!-- My Schedule View -->
-  <div class="my-schedule-view" id="myScheduleView">
-    <div id="myScheduleContent"></div>
+  <div class="sched-scroll">
+    <div class="sched-grid" id="grid"></div>
   </div>
 </div>
 
-<!-- Bottom Nav -->
-<nav class="bottom-nav">
-  <button class="nav-btn active" id="navSchedule" onclick="switchView('schedule')">
+<div id="myView">
+  <div id="myContent"></div>
+</div>
+
+<nav class="bot-nav">
+  <button class="nbtn active" id="nb0" onclick="switchView('schedule')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      <rect x="3" y="4" width="18" height="18" rx="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
     </svg>
     スケジュール
   </button>
-  <button class="nav-btn" id="navMy" onclick="switchView('my')">
-    <span class="nav-badge" id="navBadge" style="display:none">0</span>
+  <button class="nbtn" id="nb1" onclick="switchView('my')">
+    <span class="nbadge" id="nbadge" style="display:none"></span>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
+      <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/>
+      <path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/>
+      <path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/>
     </svg>
     マイ予定
   </button>
 </nav>
 
-<!-- Modal -->
-<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
-  <div class="modal-sheet" id="modalSheet">
-    <div class="modal-handle"></div>
-    <div class="modal-header">
-      <div class="modal-badge" id="modalBadge"></div>
-      <div class="modal-title" id="modalTitle"></div>
-      <div class="modal-meta" id="modalMeta"></div>
+<div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+  <div class="sheet" id="sheet">
+    <div class="s-handle"></div>
+    <div class="s-head">
+      <div class="s-type" id="sType"></div>
+      <div class="s-title" id="sTitle"></div>
+      <div class="s-meta" id="sMeta"></div>
     </div>
-    <div class="modal-body" id="modalBody"></div>
-    <div class="modal-footer">
-      <button class="modal-check-btn unchecked" id="modalCheckBtn" onclick="toggleFromModal()">
-        <span id="modalCheckIcon">＋</span>
-        <span id="modalCheckText">マイ予定に追加</span>
-      </button>
-    </div>
+    <div class="s-body" id="sBody"></div>
   </div>
 </div>
 
 <script>
 // ── Data ──────────────────────────────────────────────────────────────────
-const ROOMS = ['Room 1', 'Room 2', 'Room 3', 'Room 6', 'Room 7'];
-const ROOM_CLASSES = ['r1', 'r2', 'r3', 'r6', 'r7'];
+const ROOMS = ['Room 1','Room 2','Room 3','Room 6','Room 7'];
+const RC    = ['r1','r2','r3','r6','r7'];
+const RC_VAR= ['--r1','--r2','--r3','--r6','--r7'];
 
-const sessions = {
-  // ─── DAY 1 ───
-  S01: {
-    id: 'S01', day: 1, time: '10:10–11:30', room: 'Room 1', roomClass: 'r1', type: 'parallel',
-    title: 'Theoretical Econometrics: Sensitivity & Breaks',
-    papers: [
-      { title: 'Asymptotically Real-time Detection of Structural Instabilities in Matrix-valued Factor Models', presenter: 'Ying Lun Cheung' },
-      { title: 'Structural Break Inference in Spatial Autoregressive Models Using GMM', presenter: 'Hayato Tagawa' },
-      { title: 'Revisit Forward Rate Unbiasedness Hypothesis using Smooth Time-Varying Cointegration Regression Model with Unknown Structural Breaks', presenter: 'Xiaoyu Kang' },
-      { title: 'Sensitivity, Informativeness, and Misspecification in GMM Estimation', presenter: 'Seojeong Lee' },
-    ]
-  },
-  S02: {
-    id: 'S02', day: 1, time: '10:10–11:30', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'High-Dimensional Statistics in Finance',
-    papers: [
-      { title: 'Is Correlation Neglect Bad for Portfolio Diversification?', presenter: 'Yuan Chen' },
-      { title: 'Realized Regularized Regressions', presenter: 'Shifan Yu' },
-      { title: 'Correcting Biases in Corporate Bond Pricing Models: Risk Perception, Mispricing, and Arbitrage', presenter: 'Chang-Shu Chung' },
-      { title: 'Realized Variance Disagreement', presenter: 'Carsten Chong' },
-    ]
-  },
-  S03: {
-    id: 'S03', day: 1, time: '10:10–11:30', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Microeconometrics: Theoretical & Sign Tests',
-    papers: [
-      { title: 'Extrapolating LATE with Weak IVs', presenter: 'Muyang Ren' },
-      { title: 'Balancing Weights for Causal Mediation Analysis', presenter: 'Kentaro Kawato' },
-      { title: 'Testing Sign Agreement', presenter: 'Deborah Kim' },
-      { title: 'Instrumental Variable Rectified Linear Unit Regression', presenter: 'Tatsushi Oka' },
-    ]
-  },
-  S04: {
-    id: 'S04', day: 1, time: '10:10–11:30', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'Time Series: Trends, Breaks & Inequality',
-    papers: [
-      { title: 'Quantile housing factors: Enhancing predictive power beyond the national housing price return', presenter: 'Meichi Huang' },
-      { title: 'The Deepening Divide Within the Rich as a Key Driver of U.S. Economic Inequality', presenter: 'Hyeongwoo Kim' },
-      { title: 'Uniform Inference for Almost Stochastic Dominance', presenter: 'Yoon-Jae Whang' },
-      { title: 'Statistical inference in time series models with multiple trend breaks', presenter: 'Daisuke Yamazaki' },
-    ]
-  },
-  S05: {
-    id: 'S05', day: 1, time: '13:00–14:20', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'Applied Microeconometrics: Treatment & IO',
-    papers: [
-      { title: 'Contagion in Financial Cooperatives: Evidence from Guarantor Networks in Kenya', presenter: 'Kevin Carney' },
-      { title: 'A Variance-Based Test for Heterogeneous Treatment Effects', presenter: 'Fangzhou Yu' },
-      { title: 'Nonparametric Identification and Estimation of Production Functions Invariant to Productivity Dynamics', presenter: 'Rentaro Utamaru' },
-      { title: 'Climate Risk Perception and Managers\' Green Innovation Strategies', presenter: 'Peiyun Jiang' },
-    ]
-  },
-  S06: {
-    id: 'S06', day: 1, time: '13:00–14:20', room: 'Room 3', roomClass: 'r3', type: 'parallel',
-    title: 'Microeconometrics: Treatment Effects & HD',
-    papers: [
-      { title: 'Estimating Treatment Effects in Panel Data Without Parallel Trends', presenter: 'Shoya Ishimaru' },
-      { title: 'Estimating Dyadic Treatment Effects with Unknown Confounders', presenter: 'Takahide Yanagi' },
-      { title: 'An Improved Inference for IV Regressions', presenter: 'Pengjin Min' },
-      { title: 'Still Biased? A Remaining Classical Selection Problem of RCTs in Education', presenter: 'Kazuma Takakura' },
-    ]
-  },
-  S07: {
-    id: 'S07', day: 1, time: '13:00–14:20', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Causal Inference I: Randomization & Disclosure',
-    papers: [
-      { title: 'Randomization Tests in Switchback Experiments', presenter: 'Liang Zhong' },
-      { title: 'Mandatory Disclosure and Housing Market Dynamics', presenter: 'Bastien Patras' },
-      { title: 'Sensitivity analysis via covariate imbalance', presenter: 'Junho Choi' },
-      { title: 'Nonparametric Causal Analysis under Ambiguity', presenter: 'Kyungchul (Kevin) Song' },
-    ]
-  },
-  S08: {
-    id: 'S08', day: 1, time: '13:00–14:20', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'ML & Statistical Learning in Finance',
-    papers: [
-      { title: 'Inflation expectations as macroeconomic shocks', presenter: 'Shifu Jiang' },
-      { title: 'Equivalence testing with data-dependent and post-hoc equivalence margins using e-values', presenter: 'Stan Koobs' },
-      { title: 'The Mechanical Virtue of Random Fourier Features and Model Complexity', presenter: 'Yuantao Shi' },
-      { title: 'Uniform Inference for Drifts and Noise in Asset Prices', presenter: 'Longyu Zhang' },
-    ]
-  },
-  S09: {
-    id: 'S09', day: 1, time: '14:30–15:50', room: 'Room 1', roomClass: 'r1', type: 'parallel',
-    title: 'Microeconometrics: HD Treatment & Networks',
-    papers: [
-      { title: 'Gaussian Approximation for High-Dimensional Second-Order U- and V-statistics with Size-Dependent Kernels under i.n.i.d. Sampling', presenter: 'Shunsuke Imai' },
-      { title: 'Prognostic Variables Estimation of Treatment Effect Distributions: Revisiting the National JTPA Study', presenter: 'Young Ahn' },
-      { title: 'Team Networks with Partially Observed Links', presenter: 'Yang Xu' },
-      { title: 'Discovering Sparsity Structure in Nonparametric Regression: An Adaptive Overlapping Group Lasso Approach with Application to Doubly Robust DiD', presenter: 'Fu Ouyang' },
-    ]
-  },
-  S10: {
-    id: 'S10', day: 1, time: '14:30–15:50', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'Nonparametric & Semiparametric Methods',
-    papers: [
-      { title: 'Inference for quantile smooth coefficients models', presenter: 'Francesco Bravo' },
-      { title: 'Identification and Estimation of Production Function and Consumer Demand Function under Monopolistic Competition', presenter: 'Chun Pang (Alex) Chow' },
-      { title: 'Unknown Group Structures in Econometric Models', presenter: 'Natasha Kang' },
-      { title: 'Tuning Free Semi-parametric Estimation for First Price Auctions with Endogenous Entry', presenter: 'Jun Ma' },
-    ]
-  },
-  S11: {
-    id: 'S11', day: 1, time: '14:30–15:50', room: 'Room 3', roomClass: 'r3', type: 'parallel',
-    title: 'Causal Inference II: RDD & LATE',
-    papers: [
-      { title: 'Local Individual Treatment Effects in the Regression Discontinuity Designs', presenter: 'Jung Hyub Lee' },
-      { title: 'Nonparametric Identification of Weakly Causal Wald Estimands via Data-Driven Local Monotonicity Discovery', presenter: 'Heuiwon Shin' },
-      { title: 'Regression Adjustment for the Local Average Treatment Effect in Randomized Experiments', presenter: 'Haruo Kakehi' },
-      { title: 'Disentangling Selection and Treatment Effects in Event Studies: A Transition Independence Approach', presenter: 'Hiroyuki Kasahara' },
-    ]
-  },
-  S12: {
-    id: 'S12', day: 1, time: '14:30–15:50', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Time Series & Applied Macroeconometrics',
-    papers: [
-      { title: 'Internal Migration Restrictions, Aggregate Productivity, and Spatial Growth', presenter: 'Tracy Xu' },
-      { title: 'Factor Dipping', presenter: 'Yinfeng Zeng' },
-      { title: 'Exponentially weighted estimands and the exponential family: filtering, prediction and smoothing', presenter: 'Simon Donker van Heel' },
-      { title: 'Estimating smooth structural change in cointegrated system with nearly or mildly integrated regressors', presenter: 'Yu Bai' },
-    ]
-  },
-  S13: {
-    id: 'S13', day: 1, time: '14:30–15:50', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'Macroeconometrics: Yields & Networks',
-    papers: [
-      { title: 'U.S.-Korea Yield Synchronization and Its Implications for Monetary Policy Transmission', presenter: 'Boreum Kwak' },
-      { title: 'The Financial Instability – Monetary Policy Nexus: Evidence from the FOMC Minutes', presenter: 'Pierre Siklos' },
-      { title: 'Does US Monetary Policy Uncertainty Affect Cross-Border Banking Flows?', presenter: 'Kanda Naknoi' },
-      { title: 'Network Analysis of Business Cycle Synchronisation', presenter: 'Jia Chen' },
-    ]
-  },
-  S14: {
-    id: 'S14', day: 1, time: '16:00–17:00', room: 'Room 1', roomClass: 'r1', type: 'parallel',
-    title: 'Microeconometrics: IO & Production',
-    papers: [
-      { title: 'Estimating the Real Effect of Endogenous Digital Technology Adoption', presenter: 'Guiying Laura Wu' },
-      { title: 'Endogenous Quantile Regression with Measurement Error in Dependent Variable', presenter: 'Xuanjing Su' },
-      { title: 'Sequential Estimation of Dynamic Discrete Choice Models with Unobserved Heterogeneity', presenter: 'Ertian Chen' },
-    ]
-  },
-  S15: {
-    id: 'S15', day: 1, time: '16:00–17:00', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'Microeconometrics: Treatment Effects',
-    papers: [
-      { title: 'Optimal Treatment Under Spillover Effects and Noncompliance', presenter: 'Yuan Tuo' },
-      { title: 'Dynamic Difference-in-Discontinuities', presenter: 'Dakyung Seong' },
-      { title: 'Lee Bounds with a Continuous Treatment in Sample Selection', presenter: 'Ying-Ying Lee' },
-    ]
-  },
-  S16: {
-    id: 'S16', day: 1, time: '16:00–17:00', room: 'Room 3', roomClass: 'r3', type: 'parallel',
-    title: 'Microeconometrics: Policy & Selection',
-    papers: [
-      { title: 'Policy Learning with Compliance Guarantee', presenter: 'Vadim Marmer' },
-      { title: 'Testing for and Evaluating the Extent of Selective Reporting', presenter: 'Nikolay Kudrin' },
-      { title: 'Earnings Dynamics and Labor Market Implications of Delivery Platforms: Evidence from Taiwan', presenter: 'Po-Chun Huang' },
-    ]
-  },
-  S17: {
-    id: 'S17', day: 1, time: '16:00–17:00', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Macroeconometrics & Inflation Dynamics',
-    papers: [
-      { title: 'Imperfect Inflation Expectations and Treasury Bond Returns', presenter: 'Zhiwei Su' },
-      { title: 'Identifying Macro Shocks from Micro Evidence: A Mixed Autoregressive Approach', presenter: 'Naoya Nagasaka' },
-      { title: 'Robust Tests for Directional Predictability', presenter: 'Bonsoo Koo' },
-    ]
-  },
-  S18: {
-    id: 'S18', day: 1, time: '16:00–17:00', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'Panel/Theoretical Econometrics & IV',
-    papers: [
-      { title: 'Post-Clustering Heterogeneity Pursuit in Panel Data with Approximate Group Structure', presenter: 'Mikihito Nishi' },
-      { title: 'Inference for Functional Instrumental Variables Regression with Possibly Weak Instruments', presenter: 'Young-Kwang Kim' },
-      { title: 'An alternative bootstrap procedure for factor-augmented regression models', presenter: 'Takashi Yamagata' },
-    ]
-  },
-  // ─── DAY 2 ───
-  S19: {
-    id: 'S19', day: 2, time: '10:10–11:30', room: 'Room 1', roomClass: 'r1', type: 'parallel',
-    title: 'Causal Inference III: DiD & Event Studies',
-    papers: [
-      { title: 'Testing Instrument Validity with Covariates', presenter: 'Thomas Carr' },
-      { title: 'Difference-in-Differences for Policy Learning', presenter: 'Koki Fusejima' },
-      { title: 'Sensitivity Analysis in Sharp Regression Discontinuity Designs', presenter: 'Siyoung Lee' },
-      { title: 'Seasonal Adjustment in Event Studies: A methodological clarification', presenter: 'Yiyang Zhang' },
-    ]
-  },
-  S20: {
-    id: 'S20', day: 2, time: '10:10–11:30', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'Theoretical TS: Predictability & Quantile',
-    papers: [
-      { title: 'Unified Inference for Predictive Mean and Quantile Regressions via Empirical Likelihood', presenter: 'Seok Young Hong' },
-      { title: 'Local asymptotic minimax inference for set-identified impulse responses', presenter: 'Masaya Takano' },
-      { title: 'Frequency-Specific Predictive Power of the Cochrane-Piazzesi Factor Innovations: A Spectral Decomposition Approach', presenter: 'Maria Grith' },
-      { title: 'Quantile Vector Autoregression without Crossing', presenter: 'Tadao Hoshino' },
-    ]
-  },
-  S21: {
-    id: 'S21', day: 2, time: '10:10–11:30', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Time Series: Impulse Responses & Local Projections',
-    papers: [
-      { title: 'Time-varying local projections with stochastic volatility', presenter: 'Jouchi Nakajima' },
-      { title: 'Robust local projection for impulse response functions with an application to monetary policy', presenter: 'Fumiya Akashi' },
-      { title: 'Local Projections When IVs Are Correlated with Multiple Shocks', presenter: 'Eunkyu Seong' },
-    ]
-  },
-  S22: {
-    id: 'S22', day: 2, time: '10:10–11:30', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'Empirical Finance: Volatility & Risk',
-    papers: [
-      { title: 'Political Shocks and Price Discovery in Prediction Markets: Evidence from the 2024 U.S. Presidential Election', presenter: 'Kwok Ping Tsang' },
-      { title: 'Detecting Multiple Distributional Structural Breaks via Empirical Characteristic Functions and Shrinkage Estimation', presenter: 'Shang Gao' },
-      { title: 'Structural Changes, Copula Asymmetry, and Tail Dependence in Japan\'s Equity and FX Markets', presenter: 'Yi-Chi Chen' },
-      { title: 'Clustering for Block Correlation Models', presenter: 'Han Chen' },
-    ]
-  },
-  S23: {
-    id: 'S23', day: 2, time: '14:10–15:30', room: 'Room 1', roomClass: 'r1', type: 'parallel',
-    title: 'Bayesian VAR & Macro Expectations',
-    papers: [
-      { title: 'Bayesian robust vector autoregressions', presenter: 'Yizhou Kuang' },
-      { title: 'Tempting FAIT: Flexible Average Inflation Targeting and the Post-COVID U.S. Inflation Surge', presenter: 'Roberto Duncan' },
-      { title: 'Inflation Disagreement Weakens the Power of Monetary Policy', presenter: 'Ding Dong' },
-      { title: 'Asymmetric Overreaction in Household Inflation Expectations: The Role of News Tone', presenter: 'Naoto Soma' },
-    ]
-  },
-  S24: {
-    id: 'S24', day: 2, time: '14:10–15:30', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'Time Series: Mixed Frequency & Panel Methods',
-    papers: [
-      { title: 'Does Population Ageing Affect Tourism Flows in OECD Countries? Evidence from A Panel Cointegration Analysis', presenter: 'Rajarshi Mitra' },
-      { title: 'Single-Index Quantile Factor Model with Observed Characteristics', presenter: 'Ruofan Xu' },
-      { title: 'Endogeneity, Heterogeneity, and Corporate Default Risk: A Correlated Random Effects Panel Approach', presenter: 'Chien-Ho Wang' },
-      { title: 'Regular and reverse Midastar models: Threshold autoregression with mixed frequency data', presenter: 'Kaiji Motegi' },
-    ]
-  },
-  S25: {
-    id: 'S25', day: 2, time: '14:10–15:30', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Panel Data: HD & Factor Models',
-    papers: [
-      { title: 'Factor Models of Matrix-Valued Time Series: Nonstationarity and Cointegration', presenter: 'Degui Li' },
-      { title: 'Universal Factor Models', presenter: 'Junlong Feng' },
-      { title: 'Robust testing in high dimensional binary response model', presenter: 'Qu Feng' },
-    ]
-  },
-  S26: {
-    id: 'S26', day: 2, time: '14:10–15:30', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'Financial Econometrics: Asset Pricing & Yields',
-    papers: [
-      { title: 'An Anatomy of Asset Returns', presenter: 'Roberto Renò' },
-      { title: 'Extreme comovements and downside/upside risk spillovers between oil and stock markets', presenter: 'Cathy Ning' },
-      { title: 'The Sovereign Debt Cost of Eurozone Shadow Economies', presenter: 'Carlos Yepez' },
-    ]
-  },
-  S27: {
-    id: 'S27', day: 2, time: '15:40–16:40', room: 'Room 1', roomClass: 'r1', type: 'parallel',
-    title: 'Time Series Econometrics',
-    papers: [
-      { title: 'Robust Two-Sample Mean Inference under Serial Dependence', presenter: 'Min Seong Kim' },
-      { title: 'Long-Range Dependence Parameter Estimation for Mixed Spectra Processes', presenter: 'Lenin Arango Castillo' },
-      { title: 'Sparsity Tests for High-Dimensional Time Series Regressions', presenter: 'Valentina Corradi' },
-    ]
-  },
-  S28: {
-    id: 'S28', day: 2, time: '15:40–16:40', room: 'Room 2', roomClass: 'r2', type: 'parallel',
-    title: 'ML & Forward Rates in Finance',
-    papers: [
-      { title: 'Nelson–Siegel Autoencoders for Global Yield Curve Forecasting', presenter: 'Anastasija Tetereva' },
-      { title: 'Revisiting the Missing R&D-Patent Relation: Challenges and Solutions for Firm Fixed Effects Models', presenter: 'Jui-Chung Yang' },
-      { title: 'Beyond Persistence: A Semiparametric HAR-Machine Learning Framework for VIX Forecasting', presenter: 'Ahhyun Kim' },
-    ]
-  },
-  S29: {
-    id: 'S29', day: 2, time: '15:40–16:40', room: 'Room 6', roomClass: 'r6', type: 'parallel',
-    title: 'Panel/HD: New Methods & Applications',
-    papers: [
-      { title: 'Debiased Tests for Sharpe Ratios of Machine Learning Portfolios', presenter: 'Ming Cheng' },
-      { title: 'Online Updating for Linear Panel Regressions', presenter: 'Joonho Hwang' },
-      { title: 'Smooth Test for Randomness using Random Matrix Theory', presenter: 'Meiling Jin' },
-    ]
-  },
-  S30: {
-    id: 'S30', day: 2, time: '15:40–16:40', room: 'Room 7', roomClass: 'r7', type: 'parallel',
-    title: 'Theoretical Econometrics: IV & GMM',
-    papers: [
-      { title: 'Best Feasible Conditional Critical Values for a More Powerful Subvector Anderson-Rubin Test', presenter: 'Jesse Hoekstra' },
-      { title: 'Mixed LR-C(α)-type tests for irregular hypotheses, general criterion functions and misspecified models', presenter: 'Pujee Tuvaandorj' },
-      { title: 'Instrumental Variable Regression with Heavy Tails', presenter: 'Jihyun Kim' },
-    ]
-  },
+const S = {
+  S01:{id:'S01',day:1,time:'10:10–11:30',room:'Room 1',rc:'r1',type:'p',
+    title:'Theoretical Econometrics: Sensitivity & Breaks',papers:[
+    {t:'Asymptotically Real-time Detection of Structural Instabilities in Matrix-valued Factor Models',a:'Ying Lun Cheung'},
+    {t:'Structural Break Inference in Spatial Autoregressive Models Using GMM',a:'Hayato Tagawa'},
+    {t:'Revisit Forward Rate Unbiasedness Hypothesis using Smooth Time-Varying Cointegration Regression Model with Unknown Structural Breaks',a:'Xiaoyu Kang'},
+    {t:'Sensitivity, Informativeness, and Misspecification in GMM Estimation',a:'Seojeong Lee'}]},
+  S02:{id:'S02',day:1,time:'10:10–11:30',room:'Room 2',rc:'r2',type:'p',
+    title:'High-Dimensional Statistics in Finance',papers:[
+    {t:'Is Correlation Neglect Bad for Portfolio Diversification?',a:'Yuan Chen'},
+    {t:'Realized Regularized Regressions',a:'Shifan Yu'},
+    {t:'Correcting Biases in Corporate Bond Pricing Models: Risk Perception, Mispricing, and Arbitrage',a:'Chang-Shu Chung'},
+    {t:'Realized Variance Disagreement',a:'Carsten Chong'}]},
+  S03:{id:'S03',day:1,time:'10:10–11:30',room:'Room 6',rc:'r6',type:'p',
+    title:'Microeconometrics: Theoretical & Sign Tests',papers:[
+    {t:'Extrapolating LATE with Weak IVs',a:'Muyang Ren'},
+    {t:'Balancing Weights for Causal Mediation Analysis',a:'Kentaro Kawato'},
+    {t:'Testing Sign Agreement',a:'Deborah Kim'},
+    {t:'Instrumental Variable Rectified Linear Unit Regression',a:'Tatsushi Oka'}]},
+  S04:{id:'S04',day:1,time:'10:10–11:30',room:'Room 7',rc:'r7',type:'p',
+    title:'Time Series: Trends, Breaks & Inequality',papers:[
+    {t:'Quantile housing factors: Enhancing predictive power beyond the national housing price return',a:'Meichi Huang'},
+    {t:'The Deepening Divide Within the Rich as a Key Driver of U.S. Economic Inequality',a:'Hyeongwoo Kim'},
+    {t:'Uniform Inference for Almost Stochastic Dominance',a:'Yoon-Jae Whang'},
+    {t:'Statistical inference in time series models with multiple trend breaks',a:'Daisuke Yamazaki'}]},
+  S05:{id:'S05',day:1,time:'13:00–14:20',room:'Room 2',rc:'r2',type:'p',
+    title:'Applied Microeconometrics: Treatment & IO',papers:[
+    {t:'Contagion in Financial Cooperatives: Evidence from Guarantor Networks in Kenya',a:'Kevin Carney'},
+    {t:'A Variance-Based Test for Heterogeneous Treatment Effects',a:'Fangzhou Yu'},
+    {t:'Nonparametric Identification and Estimation of Production Functions Invariant to Productivity Dynamics',a:'Rentaro Utamaru'},
+    {t:"Climate Risk Perception and Managers' Green Innovation Strategies",a:'Peiyun Jiang'}]},
+  S06:{id:'S06',day:1,time:'13:00–14:20',room:'Room 3',rc:'r3',type:'p',
+    title:'Microeconometrics: Treatment Effects & HD',papers:[
+    {t:'Estimating Treatment Effects in Panel Data Without Parallel Trends',a:'Shoya Ishimaru'},
+    {t:'Estimating Dyadic Treatment Effects with Unknown Confounders',a:'Takahide Yanagi'},
+    {t:'An Improved Inference for IV Regressions',a:'Pengjin Min'},
+    {t:'Still Biased? A Remaining Classical Selection Problem of RCTs in Education',a:'Kazuma Takakura'}]},
+  S07:{id:'S07',day:1,time:'13:00–14:20',room:'Room 6',rc:'r6',type:'p',
+    title:'Causal Inference I: Randomization & Disclosure',papers:[
+    {t:'Randomization Tests in Switchback Experiments',a:'Liang Zhong'},
+    {t:'Mandatory Disclosure and Housing Market Dynamics',a:'Bastien Patras'},
+    {t:'Sensitivity analysis via covariate imbalance',a:'Junho Choi'},
+    {t:'Nonparametric Causal Analysis under Ambiguity',a:'Kyungchul (Kevin) Song'}]},
+  S08:{id:'S08',day:1,time:'13:00–14:20',room:'Room 7',rc:'r7',type:'p',
+    title:'ML & Statistical Learning in Finance',papers:[
+    {t:'Inflation expectations as macroeconomic shocks',a:'Shifu Jiang'},
+    {t:'Equivalence testing with data-dependent and post-hoc equivalence margins using e-values',a:'Stan Koobs'},
+    {t:'The Mechanical Virtue of Random Fourier Features and Model Complexity',a:'Yuantao Shi'},
+    {t:'Uniform Inference for Drifts and Noise in Asset Prices',a:'Longyu Zhang'}]},
+  S09:{id:'S09',day:1,time:'14:30–15:50',room:'Room 1',rc:'r1',type:'p',
+    title:'Microeconometrics: HD Treatment & Networks',papers:[
+    {t:'Gaussian Approximation for High-Dimensional Second-Order U- and V-statistics with Size-Dependent Kernels under i.n.i.d. Sampling',a:'Shunsuke Imai'},
+    {t:'Prognostic Variables Estimation of Treatment Effect Distributions: Revisiting the National JTPA Study',a:'Young Ahn'},
+    {t:'Team Networks with Partially Observed Links',a:'Yang Xu'},
+    {t:'Discovering Sparsity Structure in Nonparametric Regression: An Adaptive Overlapping Group Lasso Approach with Application to Doubly Robust DiD',a:'Fu Ouyang'}]},
+  S10:{id:'S10',day:1,time:'14:30–15:50',room:'Room 2',rc:'r2',type:'p',
+    title:'Nonparametric & Semiparametric Methods',papers:[
+    {t:'Inference for quantile smooth coefficients models',a:'Francesco Bravo'},
+    {t:'Identification and Estimation of Production Function and Consumer Demand Function under Monopolistic Competition',a:'Chun Pang (Alex) Chow'},
+    {t:'Unknown Group Structures in Econometric Models',a:'Natasha Kang'},
+    {t:'Tuning Free Semi-parametric Estimation for First Price Auctions with Endogenous Entry',a:'Jun Ma'}]},
+  S11:{id:'S11',day:1,time:'14:30–15:50',room:'Room 3',rc:'r3',type:'p',
+    title:'Causal Inference II: RDD & LATE',papers:[
+    {t:'Local Individual Treatment Effects in the Regression Discontinuity Designs',a:'Jung Hyub Lee'},
+    {t:'Nonparametric Identification of Weakly Causal Wald Estimands via Data-Driven Local Monotonicity Discovery',a:'Heuiwon Shin'},
+    {t:'Regression Adjustment for the Local Average Treatment Effect in Randomized Experiments',a:'Haruo Kakehi'},
+    {t:'Disentangling Selection and Treatment Effects in Event Studies: A Transition Independence Approach',a:'Hiroyuki Kasahara'}]},
+  S12:{id:'S12',day:1,time:'14:30–15:50',room:'Room 6',rc:'r6',type:'p',
+    title:'Time Series & Applied Macroeconometrics',papers:[
+    {t:'Internal Migration Restrictions, Aggregate Productivity, and Spatial Growth',a:'Tracy Xu'},
+    {t:'Factor Dipping',a:'Yinfeng Zeng'},
+    {t:'Exponentially weighted estimands and the exponential family: filtering, prediction and smoothing',a:'Simon Donker van Heel'},
+    {t:'Estimating smooth structural change in cointegrated system with nearly or mildly integrated regressors',a:'Yu Bai'}]},
+  S13:{id:'S13',day:1,time:'14:30–15:50',room:'Room 7',rc:'r7',type:'p',
+    title:'Macroeconometrics: Yields & Networks',papers:[
+    {t:'U.S.-Korea Yield Synchronization and Its Implications for Monetary Policy Transmission',a:'Boreum Kwak'},
+    {t:'The Financial Instability – Monetary Policy Nexus: Evidence from the FOMC Minutes',a:'Pierre Siklos'},
+    {t:'Does US Monetary Policy Uncertainty Affect Cross-Border Banking Flows?',a:'Kanda Naknoi'},
+    {t:'Network Analysis of Business Cycle Synchronisation',a:'Jia Chen'}]},
+  S14:{id:'S14',day:1,time:'16:00–17:00',room:'Room 1',rc:'r1',type:'p',
+    title:'Microeconometrics: IO & Production',papers:[
+    {t:'Estimating the Real Effect of Endogenous Digital Technology Adoption',a:'Guiying Laura Wu'},
+    {t:'Endogenous Quantile Regression with Measurement Error in Dependent Variable',a:'Xuanjing Su'},
+    {t:'Sequential Estimation of Dynamic Discrete Choice Models with Unobserved Heterogeneity',a:'Ertian Chen'}]},
+  S15:{id:'S15',day:1,time:'16:00–17:00',room:'Room 2',rc:'r2',type:'p',
+    title:'Microeconometrics: Treatment Effects',papers:[
+    {t:'Optimal Treatment Under Spillover Effects and Noncompliance',a:'Yuan Tuo'},
+    {t:'Dynamic Difference-in-Discontinuities',a:'Dakyung Seong'},
+    {t:'Lee Bounds with a Continuous Treatment in Sample Selection',a:'Ying-Ying Lee'}]},
+  S16:{id:'S16',day:1,time:'16:00–17:00',room:'Room 3',rc:'r3',type:'p',
+    title:'Microeconometrics: Policy & Selection',papers:[
+    {t:'Policy Learning with Compliance Guarantee',a:'Vadim Marmer'},
+    {t:'Testing for and Evaluating the Extent of Selective Reporting',a:'Nikolay Kudrin'},
+    {t:'Earnings Dynamics and Labor Market Implications of Delivery Platforms: Evidence from Taiwan',a:'Po-Chun Huang'}]},
+  S17:{id:'S17',day:1,time:'16:00–17:00',room:'Room 6',rc:'r6',type:'p',
+    title:'Macroeconometrics & Inflation Dynamics',papers:[
+    {t:'Imperfect Inflation Expectations and Treasury Bond Returns',a:'Zhiwei Su'},
+    {t:'Identifying Macro Shocks from Micro Evidence: A Mixed Autoregressive Approach',a:'Naoya Nagasaka'},
+    {t:'Robust Tests for Directional Predictability',a:'Bonsoo Koo'}]},
+  S18:{id:'S18',day:1,time:'16:00–17:00',room:'Room 7',rc:'r7',type:'p',
+    title:'Panel/Theoretical Econometrics & IV',papers:[
+    {t:'Post-Clustering Heterogeneity Pursuit in Panel Data with Approximate Group Structure',a:'Mikihito Nishi'},
+    {t:'Inference for Functional Instrumental Variables Regression with Possibly Weak Instruments',a:'Young-Kwang Kim'},
+    {t:'An alternative bootstrap procedure for factor-augmented regression models',a:'Takashi Yamagata'}]},
+  S19:{id:'S19',day:2,time:'10:10–11:30',room:'Room 1',rc:'r1',type:'p',
+    title:'Causal Inference III: DiD & Event Studies',papers:[
+    {t:'Testing Instrument Validity with Covariates',a:'Thomas Carr'},
+    {t:'Difference-in-Differences for Policy Learning',a:'Koki Fusejima'},
+    {t:'Sensitivity Analysis in Sharp Regression Discontinuity Designs',a:'Siyoung Lee'},
+    {t:'Seasonal Adjustment in Event Studies: A methodological clarification',a:'Yiyang Zhang'}]},
+  S20:{id:'S20',day:2,time:'10:10–11:30',room:'Room 2',rc:'r2',type:'p',
+    title:'Theoretical TS: Predictability & Quantile',papers:[
+    {t:'Unified Inference for Predictive Mean and Quantile Regressions via Empirical Likelihood',a:'Seok Young Hong'},
+    {t:'Local asymptotic minimax inference for set-identified impulse responses',a:'Masaya Takano'},
+    {t:'Frequency-Specific Predictive Power of the Cochrane-Piazzesi Factor Innovations: A Spectral Decomposition Approach',a:'Maria Grith'},
+    {t:'Quantile Vector Autoregression without Crossing',a:'Tadao Hoshino'}]},
+  S21:{id:'S21',day:2,time:'10:10–11:30',room:'Room 6',rc:'r6',type:'p',
+    title:'Time Series: Impulse Responses & Local Projections',papers:[
+    {t:'Time-varying local projections with stochastic volatility',a:'Jouchi Nakajima'},
+    {t:'Robust local projection for impulse response functions with an application to monetary policy',a:'Fumiya Akashi'},
+    {t:'Local Projections When IVs Are Correlated with Multiple Shocks',a:'Eunkyu Seong'}]},
+  S22:{id:'S22',day:2,time:'10:10–11:30',room:'Room 7',rc:'r7',type:'p',
+    title:'Empirical Finance: Volatility & Risk',papers:[
+    {t:'Political Shocks and Price Discovery in Prediction Markets: Evidence from the 2024 U.S. Presidential Election',a:'Kwok Ping Tsang'},
+    {t:'Detecting Multiple Distributional Structural Breaks via Empirical Characteristic Functions and Shrinkage Estimation',a:'Shang Gao'},
+    {t:"Structural Changes, Copula Asymmetry, and Tail Dependence in Japan's Equity and FX Markets",a:'Yi-Chi Chen'},
+    {t:'Clustering for Block Correlation Models',a:'Han Chen'}]},
+  S23:{id:'S23',day:2,time:'14:10–15:30',room:'Room 1',rc:'r1',type:'p',
+    title:'Bayesian VAR & Macro Expectations',papers:[
+    {t:'Bayesian robust vector autoregressions',a:'Yizhou Kuang'},
+    {t:'Tempting FAIT: Flexible Average Inflation Targeting and the Post-COVID U.S. Inflation Surge',a:'Roberto Duncan'},
+    {t:'Inflation Disagreement Weakens the Power of Monetary Policy',a:'Ding Dong'},
+    {t:'Asymmetric Overreaction in Household Inflation Expectations: The Role of News Tone',a:'Naoto Soma'}]},
+  S24:{id:'S24',day:2,time:'14:10–15:30',room:'Room 2',rc:'r2',type:'p',
+    title:'Time Series: Mixed Frequency & Panel Methods',papers:[
+    {t:'Does Population Ageing Affect Tourism Flows in OECD Countries? Evidence from A Panel Cointegration Analysis',a:'Rajarshi Mitra'},
+    {t:'Single-Index Quantile Factor Model with Observed Characteristics',a:'Ruofan Xu'},
+    {t:'Endogeneity, Heterogeneity, and Corporate Default Risk: A Correlated Random Effects Panel Approach',a:'Chien-Ho Wang'},
+    {t:'Regular and reverse Midastar models: Threshold autoregression with mixed frequency data',a:'Kaiji Motegi'}]},
+  S25:{id:'S25',day:2,time:'14:10–15:30',room:'Room 6',rc:'r6',type:'p',
+    title:'Panel Data: HD & Factor Models',papers:[
+    {t:'Factor Models of Matrix-Valued Time Series: Nonstationarity and Cointegration',a:'Degui Li'},
+    {t:'Universal Factor Models',a:'Junlong Feng'},
+    {t:'Robust testing in high dimensional binary response model',a:'Qu Feng'}]},
+  S26:{id:'S26',day:2,time:'14:10–15:30',room:'Room 7',rc:'r7',type:'p',
+    title:'Financial Econometrics: Asset Pricing & Yields',papers:[
+    {t:'An Anatomy of Asset Returns',a:'Roberto Renò'},
+    {t:'Extreme comovements and downside/upside risk spillovers between oil and stock markets',a:'Cathy Ning'},
+    {t:'The Sovereign Debt Cost of Eurozone Shadow Economies',a:'Carlos Yepez'}]},
+  S27:{id:'S27',day:2,time:'15:40–16:40',room:'Room 1',rc:'r1',type:'p',
+    title:'Time Series Econometrics',papers:[
+    {t:'Robust Two-Sample Mean Inference under Serial Dependence',a:'Min Seong Kim'},
+    {t:'Long-Range Dependence Parameter Estimation for Mixed Spectra Processes',a:'Lenin Arango Castillo'},
+    {t:'Sparsity Tests for High-Dimensional Time Series Regressions',a:'Valentina Corradi'}]},
+  S28:{id:'S28',day:2,time:'15:40–16:40',room:'Room 2',rc:'r2',type:'p',
+    title:'ML & Forward Rates in Finance',papers:[
+    {t:'Nelson–Siegel Autoencoders for Global Yield Curve Forecasting',a:'Anastasija Tetereva'},
+    {t:'Revisiting the Missing R&D-Patent Relation: Challenges and Solutions for Firm Fixed Effects Models',a:'Jui-Chung Yang'},
+    {t:'Beyond Persistence: A Semiparametric HAR-Machine Learning Framework for VIX Forecasting',a:'Ahhyun Kim'}]},
+  S29:{id:'S29',day:2,time:'15:40–16:40',room:'Room 6',rc:'r6',type:'p',
+    title:'Panel/HD: New Methods & Applications',papers:[
+    {t:'Debiased Tests for Sharpe Ratios of Machine Learning Portfolios',a:'Ming Cheng'},
+    {t:'Online Updating for Linear Panel Regressions',a:'Joonho Hwang'},
+    {t:'Smooth Test for Randomness using Random Matrix Theory',a:'Meiling Jin'}]},
+  S30:{id:'S30',day:2,time:'15:40–16:40',room:'Room 7',rc:'r7',type:'p',
+    title:'Theoretical Econometrics: IV & GMM',papers:[
+    {t:'Best Feasible Conditional Critical Values for a More Powerful Subvector Anderson-Rubin Test',a:'Jesse Hoekstra'},
+    {t:'Mixed LR-C(α)-type tests for irregular hypotheses, general criterion functions and misspecified models',a:'Pujee Tuvaandorj'},
+    {t:'Instrumental Variable Regression with Heavy Tails',a:'Jihyun Kim'}]},
 };
 
-// Special (full-width) events
-const specialEvents = {
-  day1: [
-    { id: 'D1_REG',    time: '08:20–',       label: '受付開始', detail: 'Registration opens — Community Lounge, 1st Floor', type: 'special' },
-    { id: 'D1_OPEN',   time: '08:50–09:00',  label: 'Opening Remarks', detail: 'Lecture Room 1', type: 'special' },
-    { id: 'D1_KEY1',   time: '09:00–10:00',  label: 'Keynote: SETA Lecture', detail: 'Domenico Giannone — "Bayesian Inference in IV Regressions"\nChair: Yoosoon Chang\nLecture Room 1', type: 'keynote' },
-    { id: 'D1_LUNCH',  time: '11:30–13:00',  label: 'Discussion over Lunch', detail: 'Lecture Room 1', type: 'special' },
-    { id: 'D1_KEY2',   time: '17:10–18:10',  label: 'Keynote: ET Lecture', detail: 'Taisuke Otsu — "Metric Econometrics"\nChair: Yoon-Jae Whang\nLecture Room 1', type: 'keynote' },
-    { id: 'D1_DIN',    time: '18:30–20:30',  label: 'Conference Dinner', detail: 'Buffet, standing-style reception\nYushima Tenmangu Sanshuden Banquet Hall\n3-30-1 Yushima, Bunkyo-ku, Tokyo', type: 'special' },
+const EV = {
+  D1_REG:  {id:'D1_REG', day:1,time:'08:20–',       label:'受付開始',              detail:'Community Lounge (1F) にて受付開始',type:'special'},
+  D1_OPEN: {id:'D1_OPEN',day:1,time:'08:50–09:00',  label:'Opening Remarks',       detail:'Lecture Room 1',type:'special'},
+  D1_KEY1: {id:'D1_KEY1',day:1,time:'09:00–10:00',  label:'Keynote: SETA Lecture', detail:'Domenico Giannone\n"Bayesian Inference in IV Regressions"\nChair: Yoosoon Chang\nLecture Room 1',type:'keynote'},
+  D1_LUNCH:{id:'D1_LUNCH',day:1,time:'11:30–13:00', label:'Discussion over Lunch',  detail:'Lecture Room 1',type:'special'},
+  D1_KEY2: {id:'D1_KEY2',day:1,time:'17:10–18:10',  label:'Keynote: ET Lecture',    detail:'Taisuke Otsu\n"Metric Econometrics"\nChair: Yoon-Jae Whang\nLecture Room 1',type:'keynote'},
+  D1_DIN:  {id:'D1_DIN', day:1,time:'18:30–20:30',  label:'Conference Dinner',      detail:'Buffet reception\nYushima Tenmangu Sanshuden Banquet Hall\n3-30-1 Yushima, Bunkyo-ku, Tokyo',type:'special'},
+  D2_PL1:  {id:'D2_PL1', day:2,time:'09:00–10:00',  label:'Plenary: Myung Hwan Seo',detail:'"SLIM: Stochastic Learning and Inference in Overidentified Models"\nChair: Ryo Okui\nLecture Room 1',type:'plenary'},
+  D2_LUNCH:{id:'D2_LUNCH',day:2,time:'11:30–13:00', label:'Discussion over Lunch',  detail:'Lecture Room 1',type:'special'},
+  D2_PL2:  {id:'D2_PL2', day:2,time:'13:00–14:00',  label:'Plenary: Takuya Ura',    detail:'"Refined Cluster Robust Inference"\nChair: Yasuhiro Omori\nLecture Room 6',type:'plenary'},
+  D2_KEY3: {id:'D2_KEY3',day:2,time:'16:50–17:50',  label:'Keynote: Hatanaka Lecture',detail:'Oscar Jordà\n"Local Projections for Complex Data"\nChair: Mototsugu Shintani\nLecture Room 1',type:'keynote'},
+  D2_CLOSE:{id:'D2_CLOSE',day:2,time:'17:50–18:00', label:'Closing Remarks',        detail:'Lecture Room 1',type:'special'},
+};
+
+const SLOTS = {
+  1:[
+    {time:'08:20–',       ev:'D1_REG'},
+    {time:'08:50–09:00',  ev:'D1_OPEN'},
+    {time:'09:00–10:00',  ev:'D1_KEY1'},
+    {time:'10:10–11:30',  par:['S01','S02',null,'S03','S04']},
+    {time:'11:30–13:00',  ev:'D1_LUNCH'},
+    {time:'13:00–14:20',  par:[null,'S05','S06','S07','S08']},
+    {time:'14:30–15:50',  par:['S09','S10','S11','S12','S13']},
+    {time:'16:00–17:00',  par:['S14','S15','S16','S17','S18']},
+    {time:'17:10–18:10',  ev:'D1_KEY2'},
+    {time:'18:30–20:30',  ev:'D1_DIN'},
   ],
-  day2: [
-    { id: 'D2_PLEN1',  time: '09:00–10:00',  label: 'Plenary: Myung Hwan Seo', detail: '"SLIM: Stochastic Learning and Inference in Overidentified Models"\nChair: Ryo Okui\nLecture Room 1', type: 'plenary' },
-    { id: 'D2_LUNCH',  time: '11:30–13:00',  label: 'Discussion over Lunch', detail: 'Lecture Room 1', type: 'special' },
-    { id: 'D2_PLEN2',  time: '13:00–14:00',  label: 'Plenary: Takuya Ura', detail: '"Refined Cluster Robust Inference"\nChair: Yasuhiro Omori\nLecture Room 6', type: 'plenary' },
-    { id: 'D2_KEY3',   time: '16:50–17:50',  label: 'Keynote: Hatanaka Lecture', detail: 'Oscar Jordà — "Local Projections for Complex Data"\nChair: Mototsugu Shintani\nLecture Room 1', type: 'keynote' },
-    { id: 'D2_CLOSE',  time: '17:50–18:00',  label: 'Closing Remarks', detail: 'Lecture Room 1', type: 'special' },
+  2:[
+    {time:'09:00–10:00',  ev:'D2_PL1'},
+    {time:'10:10–11:30',  par:['S19','S20',null,'S21','S22']},
+    {time:'11:30–13:00',  ev:'D2_LUNCH'},
+    {time:'13:00–14:00',  ev:'D2_PL2'},
+    {time:'14:10–15:30',  par:['S23','S24',null,'S25','S26']},
+    {time:'15:40–16:40',  par:['S27','S28',null,'S29','S30']},
+    {time:'16:50–17:50',  ev:'D2_KEY3'},
+    {time:'17:50–18:00',  ev:'D2_CLOSE'},
   ]
 };
 
-// Time slots per day
-const timeSlots = {
-  1: [
-    { time: '08:20–', special: 'D1_REG' },
-    { time: '08:50–09:00', special: 'D1_OPEN' },
-    { time: '09:00–10:00', special: 'D1_KEY1' },
-    { time: '10:10–11:30', parallel: ['S01','S02',null,'S03','S04'] },
-    { time: '11:30–13:00', special: 'D1_LUNCH' },
-    { time: '13:00–14:20', parallel: [null,'S05','S06','S07','S08'] },
-    { time: '14:30–15:50', parallel: ['S09','S10','S11','S12','S13'] },
-    { time: '16:00–17:00', parallel: ['S14','S15','S16','S17','S18'] },
-    { time: '17:10–18:10', special: 'D1_KEY2' },
-    { time: '18:30–20:30', special: 'D1_DIN' },
-  ],
-  2: [
-    { time: '09:00–10:00', special: 'D2_PLEN1' },
-    { time: '10:10–11:30', parallel: ['S19','S20',null,'S21','S22'] },
-    { time: '11:30–13:00', special: 'D2_LUNCH' },
-    { time: '13:00–14:00', special: 'D2_PLEN2' },
-    { time: '14:10–15:30', parallel: ['S23','S24',null,'S25','S26'] },
-    { time: '15:40–16:40', parallel: ['S27','S28',null,'S29','S30'] },
-    { time: '16:50–17:50', special: 'D2_KEY3' },
-    { time: '17:50–18:00', special: 'D2_CLOSE' },
-  ]
-};
+// ── State ─────────────────────────────────────────────────────────────────
+let saved = JSON.parse(localStorage.getItem('seta2026_v2')||'{}');
+// Keys: "P_S01_0" for paper, "E_D1_KEY1" for event
 
-// ── State ──────────────────────────────────────────────────────────────────
-let currentDay = 1;
-let currentView = 'schedule';
-let checked = JSON.parse(localStorage.getItem('seta2026_checked') || '{}');
-let modalSessionId = null;
+function save(){ localStorage.setItem('seta2026_v2', JSON.stringify(saved)); }
 
-function saveChecked() {
-  localStorage.setItem('seta2026_checked', JSON.stringify(checked));
+function isPaperOn(sid,i){ return !!saved[`P_${sid}_${i}`]; }
+function isEvOn(eid)     { return !!saved[`E_${eid}`]; }
+function countPapers(sid){ return (S[sid]?.papers||[]).filter((_,i)=>isPaperOn(sid,i)).length; }
+function totalCount(){     return Object.values(saved).filter(Boolean).length; }
+
+function togglePaper(sid,i){
+  const k=`P_${sid}_${i}`;
+  if(saved[k]) delete saved[k]; else saved[k]=true;
+  save();
+}
+function toggleEv(eid){
+  const k=`E_${eid}`;
+  if(saved[k]) delete saved[k]; else saved[k]=true;
+  save();
+}
+function clearAll(){
+  saved={};save();
+  renderGrid();updateUI();
 }
 
-// ── Render Grid ────────────────────────────────────────────────────────────
-function renderGrid() {
-  const grid = document.getElementById('scheduleGrid');
-  grid.innerHTML = '';
+// ── Current modal ─────────────────────────────────────────────────────────
+let modalId=null, modalIsEv=false;
+let currentDay=1;
 
-  // Header row
-  const timeHeaderCell = document.createElement('div');
-  timeHeaderCell.className = 'room-header-cell';
-  timeHeaderCell.textContent = '時間';
-  grid.appendChild(timeHeaderCell);
+// ── Render Grid ───────────────────────────────────────────────────────────
+function renderGrid(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';
 
-  ROOMS.forEach((room, i) => {
-    const cell = document.createElement('div');
-    cell.className = `room-header-cell ${ROOM_CLASSES[i]}`;
-    cell.innerHTML = room.replace(' ', '<br>');
-    grid.appendChild(cell);
+  // Room header row
+  const corner=el('div','rhdr corner');corner.textContent='時間';g.appendChild(corner);
+  ROOMS.forEach((r,i)=>{
+    const c=el('div',`rhdr ${RC[i]}`);
+    c.innerHTML=r.replace(' ','<br>');
+    g.appendChild(c);
   });
 
-  // Rows
-  timeSlots[currentDay].forEach(slot => {
-    const timeCell = document.createElement('div');
-    timeCell.className = 'time-label';
-    timeCell.textContent = slot.time.replace('–', '\n–');
-    grid.appendChild(timeCell);
+  SLOTS[currentDay].forEach(slot=>{
+    const tl=el('div','tlbl');
+    tl.textContent=slot.time.replace('–','\n–');
+    g.appendChild(tl);
 
-    if (slot.special) {
-      // Full-width special event
-      const allSpecials = [...specialEvents.day1, ...specialEvents.day2];
-      const ev = allSpecials.find(e => e.id === slot.special);
-      const cell = document.createElement('div');
-      cell.className = 'session-cell col-span-5';
-      cell.style.minHeight = '60px';
-      const card = document.createElement('div');
-      card.className = `session-card ${ev.type}`;
-      card.innerHTML = `<div class="session-type-badge">${ev.type === 'keynote' ? 'Keynote' : ev.type === 'plenary' ? 'Plenary' : 'Special'}</div><div class="session-title">${ev.label}</div>`;
-      if (ev.type === 'keynote' || ev.type === 'plenary') {
-        const lines = ev.detail.split('\n');
-        card.innerHTML += `<div class="session-presenter">${lines[0]}</div>`;
-        // Add check button for keynote/plenary
-        const checkBtn = document.createElement('div');
-        checkBtn.className = `check-btn${checked[ev.id] ? ' checked' : ''}`;
-        checkBtn.innerHTML = '<span class="checkmark">✓</span>';
-        checkBtn.addEventListener('click', e => { e.stopPropagation(); toggleCheck(ev.id); renderGrid(); updateUI(); });
-        card.appendChild(checkBtn);
+    if(slot.ev){
+      const ev=EV[slot.ev];
+      const cell=el('div','scell span5');
+      cell.style.minHeight='56px';
+      const card=el('div',`scard ${ev.type}`);
+      card.innerHTML=`<div class="sbadge">${typeLabel(ev.type)}</div><div class="stitle">${ev.label}</div>`;
+      const lines=ev.detail.split('\n');
+      if(ev.type!=='special') card.innerHTML+=`<div class="ssub">${lines[0]}</div>`;
+      if(ev.type==='keynote'||ev.type==='plenary'){
+        const ck=el('div','ev-ck'+(isEvOn(ev.id)?' on':''));
+        ck.textContent='✓';
+        ck.addEventListener('click',e=>{e.stopPropagation();toggleEv(ev.id);renderGrid();updateUI();});
+        card.appendChild(ck);
       }
-      card.addEventListener('click', () => openSpecialModal(ev));
-      cell.appendChild(card);
-      grid.appendChild(cell);
-    } else if (slot.parallel) {
-      // 5 room cells
-      slot.parallel.forEach((sid, i) => {
-        const cell = document.createElement('div');
-        cell.className = 'session-cell';
-        if (sid) {
-          const s = sessions[sid];
-          const card = document.createElement('div');
-          card.className = `session-card parallel ${s.roomClass}`;
-          const presenters = s.papers.map(p => p.presenter).join(', ');
-          card.innerHTML = `
-            <div class="session-type-badge">${s.id}</div>
-            <div class="session-title">${s.title}</div>
-            <div class="session-presenter">${presenters}</div>
-          `;
-          const checkBtn = document.createElement('div');
-          checkBtn.className = `check-btn${checked[sid] ? ' checked' : ''}`;
-          checkBtn.innerHTML = '<span class="checkmark">✓</span>';
-          checkBtn.addEventListener('click', e => { e.stopPropagation(); toggleCheck(sid); renderGrid(); updateUI(); });
-          card.appendChild(checkBtn);
-          card.addEventListener('click', () => openModal(sid));
+      card.addEventListener('click',()=>openEvModal(ev.id));
+      cell.appendChild(card);g.appendChild(cell);
+    } else {
+      slot.par.forEach((sid,i)=>{
+        const cell=el('div','scell');
+        if(sid){
+          const s=S[sid];
+          const card=el('div',`scard p ${s.rc}`);
+          const cnt=countPapers(sid);
+          card.innerHTML=`<div class="sbadge">${s.id}</div><div class="stitle">${s.title}</div>`;
+          if(cnt>0){
+            const b=el('div','ck-cnt');
+            b.textContent=`✓${cnt}`;
+            card.appendChild(b);
+          }
+          card.addEventListener('click',()=>openSessModal(sid));
           cell.appendChild(card);
         }
-        grid.appendChild(cell);
+        g.appendChild(cell);
       });
     }
   });
 }
 
-// ── Toggle Check ───────────────────────────────────────────────────────────
-function toggleCheck(id) {
-  checked[id] = !checked[id];
-  if (!checked[id]) delete checked[id];
-  saveChecked();
+function typeLabel(t){
+  return t==='keynote'?'Keynote':t==='plenary'?'Plenary':'Special';
+}
+function el(tag,cls){ const e=document.createElement(tag); if(cls) e.className=cls; return e; }
+
+// ── Modals ────────────────────────────────────────────────────────────────
+function openSessModal(sid){
+  modalId=sid; modalIsEv=false;
+  const s=S[sid];
+  document.getElementById('sType').textContent=`${s.id} · ${s.room} · ${s.time}`;
+  document.getElementById('sType').className='s-type p';
+  document.getElementById('sTitle').textContent=s.title;
+  document.getElementById('sMeta').innerHTML=`<span>📍 ${s.room}</span>&nbsp;&nbsp;<span>🕐 ${s.time}</span>`;
+
+  const body=document.getElementById('sBody');
+  const allOn=s.papers.every((_,i)=>isPaperOn(sid,i));
+  body.innerHTML=`<div class="sec-hdr">発表 (${s.papers.length}件)</div>`;
+
+  const selAll=el('button','sel-all');
+  selAll.textContent=allOn?'全選択を解除':'全て追加';
+  selAll.addEventListener('click',()=>{
+    s.papers.forEach((_,i)=>{
+      if(allOn){delete saved[`P_${sid}_${i}`];}
+      else{saved[`P_${sid}_${i}`]=true;}
+    });
+    save();renderGrid();updateUI();
+    openSessModal(sid);
+  });
+  body.appendChild(selAll);
+
+  s.papers.forEach((p,i)=>{
+    const row=el('div','p-row');
+    const ck=el('div','p-ck'+(isPaperOn(sid,i)?' on':''));
+    ck.textContent='✓';
+    const info=el('div','p-info');
+    info.innerHTML=`<div class="p-title">${p.t}</div><div class="p-auth">発表者: ${p.a}</div>`;
+    row.appendChild(ck);row.appendChild(info);
+    row.addEventListener('click',()=>{
+      togglePaper(sid,i);
+      renderGrid();updateUI();
+      ck.classList.toggle('on',isPaperOn(sid,i));
+      const cnt=countPapers(sid);
+      selAll.textContent=s.papers.every((_,j)=>isPaperOn(sid,j))?'全選択を解除':'全て追加';
+    });
+    body.appendChild(row);
+  });
+  document.getElementById('overlay').classList.add('open');
 }
 
-function toggleFromModal() {
-  if (!modalSessionId) return;
-  toggleCheck(modalSessionId);
-  updateModalCheckBtn();
-  updateUI();
-  renderGrid();
-}
+function openEvModal(eid){
+  modalId=eid; modalIsEv=true;
+  const ev=EV[eid];
+  document.getElementById('sType').textContent=typeLabel(ev.type);
+  document.getElementById('sType').className=`s-type ${ev.type}`;
+  document.getElementById('sTitle').textContent=ev.label;
+  document.getElementById('sMeta').innerHTML=`<span>🕐 ${ev.time}</span>`;
 
-function clearAll() {
-  checked = {};
-  saveChecked();
-  updateUI();
-  renderGrid();
-}
+  const body=document.getElementById('sBody');
+  body.innerHTML=`<div style="font-size:15px;line-height:1.8;white-space:pre-line;color:var(--text)">${ev.detail}</div>`;
 
-// ── Modal ──────────────────────────────────────────────────────────────────
-function openModal(sid) {
-  const s = sessions[sid];
-  modalSessionId = sid;
-  document.getElementById('modalBadge').textContent = `${s.id} · ${s.room} · ${s.time}`;
-  document.getElementById('modalBadge').className = 'modal-badge parallel';
-  document.getElementById('modalTitle').textContent = s.title;
-  document.getElementById('modalMeta').innerHTML = `<span>📍 ${s.room}</span><span>🕐 ${s.time}</span>`;
-
-  const body = document.getElementById('modalBody');
-  body.innerHTML = `<div class="modal-section-title">発表 (${s.papers.length}本)</div>` +
-    s.papers.map((p, i) => `
-      <div class="paper-item">
-        <div class="paper-title">${i+1}. ${p.title}</div>
-        <div class="paper-presenter">発表者: ${p.presenter}</div>
-      </div>`).join('');
-
-  updateModalCheckBtn();
-  document.getElementById('modalOverlay').classList.add('open');
-}
-
-function openSpecialModal(ev) {
-  modalSessionId = ev.id;
-  const typeLabel = ev.type === 'keynote' ? 'Keynote' : ev.type === 'plenary' ? 'Plenary' : 'Special';
-  document.getElementById('modalBadge').textContent = typeLabel;
-  document.getElementById('modalBadge').className = `modal-badge ${ev.type}`;
-  document.getElementById('modalTitle').textContent = ev.label;
-  document.getElementById('modalMeta').innerHTML = `<span>🕐 ${ev.time}</span>`;
-
-  const body = document.getElementById('modalBody');
-  body.innerHTML = `<div style="font-size:14px; line-height:1.8; white-space:pre-line; color:var(--text);">${ev.detail}</div>`;
-
-  const isCheckable = ev.type === 'keynote' || ev.type === 'plenary';
-  document.getElementById('modalCheckBtn').style.display = isCheckable ? 'flex' : 'none';
-
-  updateModalCheckBtn();
-  document.getElementById('modalOverlay').classList.add('open');
-}
-
-function updateModalCheckBtn() {
-  const btn = document.getElementById('modalCheckBtn');
-  const icon = document.getElementById('modalCheckIcon');
-  const text = document.getElementById('modalCheckText');
-  if (checked[modalSessionId]) {
-    btn.classList.remove('unchecked');
-    icon.textContent = '✓';
-    text.textContent = 'マイ予定から削除';
-  } else {
-    btn.classList.add('unchecked');
-    icon.textContent = '＋';
-    text.textContent = 'マイ予定に追加';
+  if(ev.type==='keynote'||ev.type==='plenary'){
+    const btn=el('button','ev-btn '+(isEvOn(eid)?'on':'off'));
+    btn.innerHTML=(isEvOn(eid)?'✓ マイ予定から削除':'＋ マイ予定に追加');
+    btn.addEventListener('click',()=>{
+      toggleEv(eid);renderGrid();updateUI();
+      btn.className='ev-btn '+(isEvOn(eid)?'on':'off');
+      btn.innerHTML=(isEvOn(eid)?'✓ マイ予定から削除':'＋ マイ予定に追加');
+    });
+    body.appendChild(btn);
   }
+  document.getElementById('overlay').classList.add('open');
 }
 
-function closeModal(e) {
-  if (e.target === document.getElementById('modalOverlay')) {
-    document.getElementById('modalOverlay').classList.remove('open');
-  }
+function handleOverlayClick(e){
+  if(e.target===document.getElementById('overlay'))
+    document.getElementById('overlay').classList.remove('open');
 }
 
-// ── My Schedule ────────────────────────────────────────────────────────────
-function renderMySchedule() {
-  const content = document.getElementById('myScheduleContent');
-  const checkedIds = Object.keys(checked).filter(k => checked[k]);
-
-  if (checkedIds.length === 0) {
-    content.innerHTML = `<div class="empty-state"><div class="icon">📋</div><p>セッションをチェックして<br>マイ予定を作りましょう</p></div>`;
+// ── My Schedule ───────────────────────────────────────────────────────────
+function renderMySchedule(){
+  const c=document.getElementById('myContent');
+  if(totalCount()===0){
+    c.innerHTML=`<div class="empty"><div class="icon">📋</div><p>セッションをタップして<br>発表をチェックしましょう</p></div>`;
     return;
   }
 
-  // Separate by day
-  const allSpecials = [...specialEvents.day1, ...specialEvents.day2];
+  // Gather checked papers & events by day
+  const days={1:[],2:[]};
 
-  const day1items = [], day2items = [];
-  checkedIds.forEach(id => {
-    if (sessions[id]) {
-      const s = sessions[id];
-      (s.day === 1 ? day1items : day2items).push({ type: 'session', data: s });
-    } else {
-      const ev = allSpecials.find(e => e.id === id);
-      if (ev) {
-        (id.startsWith('D1') ? day1items : day2items).push({ type: 'special', data: ev });
-      }
-    }
+  // Events
+  Object.keys(saved).filter(k=>k.startsWith('E_')&&saved[k]).forEach(k=>{
+    const eid=k.slice(2);
+    const ev=EV[eid];
+    if(ev) days[ev.day].push({kind:'ev',ev});
   });
 
-  // Sort by time
-  const timeOrder = (t) => { const m = t.match(/(\d+):(\d+)/); return m ? parseInt(m[1])*60+parseInt(m[2]) : 0; };
-  day1items.sort((a,b) => timeOrder((a.data.time||'')) - timeOrder((b.data.time||'')));
-  day2items.sort((a,b) => timeOrder((a.data.time||'')) - timeOrder((b.data.time||'')));
+  // Papers grouped by session
+  const sessMap={};
+  Object.keys(saved).filter(k=>k.startsWith('P_')&&saved[k]).forEach(k=>{
+    const parts=k.slice(2).split('_');
+    const sid=parts.slice(0,2).join('_');
+    const idx=parseInt(parts[2]);
+    if(!sessMap[sid]) sessMap[sid]=[];
+    sessMap[sid].push(idx);
+  });
+  Object.entries(sessMap).forEach(([sid,idxs])=>{
+    const s=S[sid];
+    if(s) days[s.day].push({kind:'sess',sid,idxs:idxs.sort((a,b)=>a-b)});
+  });
 
-  const renderItems = (items) => items.map(item => {
-    if (item.type === 'session') {
-      const s = item.data;
-      return `<div class="my-session-item" onclick="openModal('${s.id}')">
-        <div class="my-session-time">🕐 ${s.time}</div>
-        <div class="my-session-room">${s.id} · ${s.room}</div>
-        <div class="my-session-title">${s.title}</div>
-      </div>`;
-    } else {
-      const ev = item.data;
-      return `<div class="my-session-item" onclick="openSpecialModal(${JSON.stringify(ev).replace(/"/g,'&quot;')})">
-        <div class="my-session-time">🕐 ${ev.time}</div>
-        <div class="my-session-title">${ev.label}</div>
-      </div>`;
-    }
-  }).join('');
+  // Sort each day by time
+  const tNum=t=>{ const m=t.match(/(\d+):(\d+)/); return m?+m[1]*60+ +m[2]:0; };
+  [1,2].forEach(d=>days[d].sort((a,b)=>{
+    const ta=a.kind==='ev'?a.ev.time:S[a.sid].time;
+    const tb=b.kind==='ev'?b.ev.time:S[b.sid].time;
+    return tNum(ta)-tNum(tb);
+  }));
 
-  let html = '';
-  if (day1items.length) html += `<h3 style="font-size:13px;font-weight:700;color:var(--subtext);margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px">Day 1 · 6月13日（土）</h3>${renderItems(day1items)}`;
-  if (day2items.length) html += `<h3 style="font-size:13px;font-weight:700;color:var(--subtext);margin:${day1items.length?'16px':0} 0 8px;text-transform:uppercase;letter-spacing:.5px">Day 2 · 6月14日（日）</h3>${renderItems(day2items)}`;
+  const roomColor={'Room 1':'var(--r1)','Room 2':'var(--r2)','Room 3':'var(--r3)','Room 6':'var(--r6)','Room 7':'var(--r7)'};
+  let html='';
 
-  content.innerHTML = html;
+  [1,2].forEach(d=>{
+    if(!days[d].length) return;
+    html+=`<div class="my-day-hdr">Day ${d} · ${d===1?'6月13日（土）':'6月14日（日）'}</div>`;
+    days[d].forEach(item=>{
+      if(item.kind==='ev'){
+        const ev=item.ev;
+        html+=`<div class="my-sess">
+          <div class="my-sess-hdr" onclick="openEvModal('${ev.id}');switchView('schedule')">
+            <div class="my-dot" style="background:${ev.type==='keynote'?'var(--keynote)':'var(--plenary)'}"></div>
+            <div class="my-info">
+              <div class="my-time">🕐 ${ev.time}</div>
+              <div class="my-sid">${ev.label}</div>
+            </div>
+          </div>
+        </div>`;
+      } else {
+        const s=S[item.sid];
+        const col=roomColor[s.room]||'var(--primary)';
+        html+=`<div class="my-sess">
+          <div class="my-sess-hdr" onclick="openSessModal('${s.id}')">
+            <div class="my-dot" style="background:${col}"></div>
+            <div class="my-info">
+              <div class="my-time">🕐 ${s.time} · ${s.room}</div>
+              <div class="my-sid">${s.id}: ${s.title}</div>
+            </div>
+          </div>`;
+        item.idxs.forEach(i=>{
+          const p=s.papers[i];
+          html+=`<div class="my-paper" data-sid="${s.id}" data-i="${i}">
+            <div class="my-pck on">✓</div>
+            <div class="my-pt">
+              <div class="my-ptitle">${p.t}</div>
+              <div class="my-pauth">${p.a}</div>
+            </div>
+          </div>`;
+        });
+        html+='</div>';
+      }
+    });
+  });
+  c.innerHTML=html;
+
+  // Bind paper toggle in my schedule
+  c.querySelectorAll('.my-paper').forEach(row=>{
+    row.addEventListener('click',()=>{
+      const sid=row.dataset.sid, i=+row.dataset.i;
+      togglePaper(sid,i);
+      renderGrid();updateUI();
+      renderMySchedule();
+    });
+  });
 }
 
-// ── View / Day Switching ───────────────────────────────────────────────────
-function switchDay(day) {
-  currentDay = day;
-  document.querySelectorAll('.day-tab').forEach((t,i) => t.classList.toggle('active', i+1 === day));
+// ── UI helpers ────────────────────────────────────────────────────────────
+function updateUI(){
+  const n=totalCount();
+  document.getElementById('ckCount').textContent=n;
+  const b=document.getElementById('nbadge');
+  b.textContent=n; b.style.display=n?'block':'none';
+}
+
+function switchDay(d){
+  currentDay=d;
+  document.querySelectorAll('.day-tab').forEach((t,i)=>t.classList.toggle('active',i+1===d));
   renderGrid();
 }
 
-function switchView(view) {
-  currentView = view;
-  document.getElementById('scheduleView').style.display = view === 'schedule' ? 'block' : 'none';
-  document.getElementById('myScheduleView').classList.toggle('active', view === 'my');
-  document.getElementById('navSchedule').classList.toggle('active', view === 'schedule');
-  document.getElementById('navMy').classList.toggle('active', view === 'my');
-  if (view === 'my') renderMySchedule();
-}
-
-function updateUI() {
-  const count = Object.values(checked).filter(Boolean).length;
-  document.getElementById('checkedCount').textContent = count;
-  const badge = document.getElementById('navBadge');
-  badge.textContent = count;
-  badge.style.display = count > 0 ? 'block' : 'none';
+function switchView(v){
+  const isSched=v==='schedule';
+  document.getElementById('scheduleView').style.display=isSched?'flex':'none';
+  document.getElementById('myView').classList.toggle('active',!isSched);
+  document.getElementById('nb0').classList.toggle('active',isSched);
+  document.getElementById('nb1').classList.toggle('active',!isSched);
+  if(!isSched) renderMySchedule();
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────
